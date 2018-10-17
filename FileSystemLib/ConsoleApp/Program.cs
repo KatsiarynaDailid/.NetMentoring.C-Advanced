@@ -9,58 +9,61 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             string startPoint = ConfigurationManager.AppSettings["StartPointPath"];
+            string extention = ConfigurationManager.AppSettings["ExtensionToFilterBy"];
+            string fileToSkip = ConfigurationManager.AppSettings["FileToSkip"];
+            string directoryToStop = ConfigurationManager.AppSettings["DirectoryToStop"];
+
             FileSystemVisitor fsv = new FileSystemVisitor((f) =>
-            {
-                string extention = ConfigurationManager.AppSettings["ExtensionToFilterBy"];
+            {               
                 return f.Extension != extention;
             });
 
-            fsv.Start += () =>
+            fsv.Start += (s, e) =>
             {
                 Console.WriteLine($"Start of iteration: \nTime Stamp: {DateTime.Now.ToString("hh:mm:ss.fff")}.");
             };
 
-            fsv.Finish += () =>
+            fsv.Finish += (s, e) =>
             {
                 Console.WriteLine($"Finish of iteration: \nTime Stamp: {DateTime.Now.ToString("hh:mm:ss.fff")}.");
             };
 
-            fsv.FileFinded += (eventArgs) =>
+            fsv.FileFinded += (s, eventArgs) =>
             {
                 Console.WriteLine($"\tFounded file: {eventArgs.FileSystemInfoItem.Name}");
             };
 
-            fsv.DirectoryFinded += (eventArgs) =>
+            fsv.DirectoryFinded += (s, eventArgs) =>
             {
                 Console.WriteLine($"\tFounded directory: {eventArgs.FileSystemInfoItem.Name}");
             };
 
-            fsv.FilteredFileFinded += (eventArgs) =>
+            fsv.FilteredFileFinded += (s, eventArgs) =>
             {
                 var name = eventArgs.FileSystemInfoItem.Name;
-                Console.WriteLine($"\tFounded filtered file:  {name}");
-                string fileToSkip = ConfigurationManager.AppSettings["FileToSkip"];
+                Console.WriteLine($"\tFounded filtered file:  {name}");         
                 if (name == fileToSkip)
                 {
-                    Console.WriteLine($"File '{name}' skiped.");
-                    eventArgs.ActionType = ActionType.Skip;
+                    Console.WriteLine($"File '{name}' skipped.");
+                    eventArgs.Skip = true;
                 }
             };
 
-            fsv.FilteredDirectoryFinded += (eventArgs) =>
+            fsv.FilteredDirectoryFinded += (s, eventArgs) =>
             {
                 var name = eventArgs.FileSystemInfoItem.Name;
-                Console.WriteLine($"\tFounded filtered directory:  {name}");
-
-                string directoryToStop = ConfigurationManager.AppSettings["DirectoryToStop"];
+                Console.WriteLine($"\tFounded filtered directory:  {name}");            
                 if (name == directoryToStop)
                 {
-                    Console.WriteLine($"Stoped on {name}.");
-                    eventArgs.ActionType = ActionType.Stop;
+                    Console.WriteLine($"Stopped on directory '{name}'.");                  
+                    ((FileSystemVisitor)s).Stop = true;
                 }
             };
 
-            foreach (var fileSystemInfo in fsv.GetFiles(startPoint));       
+            foreach (var fileSystemInfo in fsv.GetFiles(startPoint))
+            {
+                Console.WriteLine(fileSystemInfo.Name);
+            }
             Console.ReadLine();
         }
     }

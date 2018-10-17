@@ -1,210 +1,216 @@
-﻿using NUnit.Framework;
-using System.IO;
+﻿using System.IO;
 using Moq;
 using FileSystemLib;
+using System;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FileSystemTests
 {
-    [TestFixture]
+    [TestClass]
     public class FileSystemVisitorValidationTests
     {
-        private ItemValidation validation;
-        private Mock<FileSystemInfo> fileSystemInfoMock;
-
-        [SetUp]
-        public void TestInit()
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void TestFakeDependency()
         {
-            validation = new ItemValidation();
-            fileSystemInfoMock = new Mock<FileSystemInfo>();
+            var x = new Mock<IFakeClass>();
+            x.Setup(l => l.ThrowException).Returns(true);
+            var fileSystemVisitor = new FileSystemVisitor(x.Object);
+            var result = fileSystemVisitor.GetFilesRecursive(new DirectoryInfo("")).ToList();
         }
 
-        [Test]
-        public void ItemValidation_FilterIsNull_ItemFilteredEventDoesNotCalled()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+        #region Old tests
 
-            // Act
-            validation.Validate(fileSystemInfo, null, (eventArgs) => actualIndicatorValue++, (eventArgs) => actualIndicatorValue++);
+        /* [Test]
+         public void ItemValidation_FilterIsNull_ItemFilteredEventDoesNotCalled()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if filter is null.");
-        }
+             // Act
+             validation.Validate(fileSystemInfo, null, (s, eventArgs) => actualIndicatorValue++, (s, eventArgs) => actualIndicatorValue++);
 
-        [Test]
-        public void ItemValidation_ItemFindedEventIsNull_ItemFindedEventDoesNotCalled()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if filter is null.");
+         }
 
-            // Act
-            validation.Validate(fileSystemInfo, fileInfo => true, null, (eventArgs) => actualIndicatorValue++);
+         [Test]
+         public void ItemValidation_ItemFindedEventIsNull_ItemFindedEventDoesNotCalled()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if Item Finded event is null.");
-        }
+             // Act
+             validation.Validate(fileSystemInfo, fileInfo => true, null, (s, eventArgs) => actualIndicatorValue++);
 
-        [Test]
-        public void ItemValidation_ItemFilteredEventIsNull_ItemFilteredEventDoesNotCalled()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if Item Finded event is null.");
+         }
 
-            // Act
-            validation.Validate(fileSystemInfo, fileInfo => true, (eventArgs) => actualIndicatorValue++, null);
+         [Test]
+         public void ItemValidation_ItemFilteredEventIsNull_ItemFilteredEventDoesNotCalled()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if Item Filtered event is null.");
-        }
+             // Act
+             validation.Validate(fileSystemInfo, fileInfo => true, (s, eventArgs) => actualIndicatorValue++, null);
 
-        [Test]
-        public void ItemValidation_AllFilesPassFilter_AllEventsCalled()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 2;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if Item Filtered event is null.");
+         }
 
-            // Act
-            validation.Validate(fileSystemInfo, fileInfo => true, (eventArgs) => actualIndicatorValue++, (eventArgs) => actualIndicatorValue++);
+         [Test]
+         public void ItemValidation_AllFilesPassFilter_AllEventsCalled()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 2;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if all files pass through filter.");
-        }
+             // Act
+             validation.Validate(fileSystemInfo, fileInfo => true, (s, eventArgs) => actualIndicatorValue++, (s, eventArgs) => actualIndicatorValue++);
 
-        [Test]
-        public void ItemValidation_AllFilesDoNotPassFilter_ItemFilteredEventDoesNotCalled()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if all files pass through filter.");
+         }
 
-            // Act
-            validation.Validate(fileSystemInfo, fileInfo => false, (eventArgs) => actualIndicatorValue++, (eventArgs) => actualIndicatorValue++);
+         [Test]
+         public void ItemValidation_AllFilesDoNotPassFilter_ItemFilteredEventDoesNotCalled()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if all files don't pass through filter.");
-        }
+             // Act
+             validation.Validate(fileSystemInfo, fileInfo => false, (s, eventArgs) => actualIndicatorValue++, (s, eventArgs) => actualIndicatorValue++);
 
-        [Test]
-        public void ItemValidation_ItemFindedEvent_ContinueActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             //Assert
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator if all files don't pass through filter.");
+         }
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true, (eventArgs) => { }, null);
+         [Test]
+         public void ItemValidation_ItemFindedEvent_ContinueActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
 
-            //Assert
-            Assert.AreEqual(ActionType.Continue, actualAction, "Wrong action type if all files pass through filter.");
-        }
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true, (s, eventArgs) => { }, null);
 
-        [Test]
-        public void ItemValidation_ItemFilteredEvent_ContinueActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             //Assert
+             Assert.AreEqual(ActionType.Continue, actualAction, "Wrong action type if all files pass through filter.");
+         }
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true, (eventArgs) => { }, (eventArgs) => { });
+         [Test]
+         public void ItemValidation_ItemFilteredEvent_ContinueActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
 
-            //Assert
-            Assert.AreEqual(ActionType.Continue, actualAction, "Wrong action type if all files pass through filter.");
-        }
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true, (s, eventArgs) => { }, (s, eventArgs) => { });
 
-        [Test]
-        public void ItemValidation_ItemFindedEvent_SkipActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(ActionType.Continue, actualAction, "Wrong action type if all files pass through filter.");
+         }
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
-                (eventArgs) =>
-                {
-                    actualIndicatorValue++;
-                    eventArgs.ActionType = ActionType.Skip;
-                }, 
-                (eventArgs) => actualIndicatorValue++);
+         [Test]
+         public void ItemValidation_ItemFindedEvent_SkipActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-            //Assert
-            Assert.AreEqual(ActionType.Skip, actualAction, "Wrong action type if all files pass through filter.");
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Skip action type for ItemFinded Event.");
-        }
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
+                 (s, eventArgs) =>
+                 {
+                     actualIndicatorValue++;
+                     eventArgs.ActionType = ActionType.Skip;
+                 }, 
+                 (s, eventArgs) => actualIndicatorValue++);
 
-        [Test]
-        public void ItemValidation_ItemFilteredEvent_SkipActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 2;
-            int actualIndicatorValue = 0;
+             //Assert
+             Assert.AreEqual(ActionType.Skip, actualAction, "Wrong action type if all files pass through filter.");
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Skip action type for ItemFinded Event.");
+         }
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
-                (eventArgs) => actualIndicatorValue++,
-                (eventArgs) =>
-                {
-                    actualIndicatorValue++;
-                    eventArgs.ActionType = ActionType.Skip;
-                });
-              
-            //Assert
-            Assert.AreEqual(ActionType.Skip, actualAction, "Wrong action type if all files pass through filter.");
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Skip action type for ItemFiltered Event.");
-        }
+         [Test]
+         public void ItemValidation_ItemFilteredEvent_SkipActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 2;
+             int actualIndicatorValue = 0;
 
-        [Test]
-        public void ItemValidation_ItemFindedEvent_StopActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 1;
-            int actualIndicatorValue = 0;
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
+                 (s, eventArgs) => actualIndicatorValue++,
+                 (s, eventArgs) =>
+                 {
+                     actualIndicatorValue++;
+                     eventArgs.ActionType = ActionType.Skip;
+                 });
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
-                (eventArgs) =>
-                {
-                    actualIndicatorValue++;
-                    eventArgs.ActionType = ActionType.Stop;
-                },
-                (eventArgs) => actualIndicatorValue++);
+             //Assert
+             Assert.AreEqual(ActionType.Skip, actualAction, "Wrong action type if all files pass through filter.");
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Skip action type for ItemFiltered Event.");
+         }
 
-            //Assert
-            Assert.AreEqual(ActionType.Stop, actualAction, "Wrong action type if all files pass through filter.");
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Stop action type for ItemFinded Event.");
-        }
+         [Test]
+         public void ItemValidation_ItemFindedEvent_StopActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 1;
+             int actualIndicatorValue = 0;
 
-        [Test]
-        public void ItemValidation_ItemFilteredEvent_StopActionReturned()
-        {
-            // Arrange
-            FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
-            int expectedIndicatorValue = 2;
-            int actualIndicatorValue = 0;
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
+                 (s, eventArgs) =>
+                 {
+                     actualIndicatorValue++;
+                     eventArgs.ActionType = ActionType.Stop;
+                 },
+                 (s, eventArgs) => actualIndicatorValue++);
 
-            // Act
-            var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
-                (eventArgs) => actualIndicatorValue++,
-                (eventArgs) =>
-                {
-                    actualIndicatorValue++;
-                    eventArgs.ActionType = ActionType.Stop;
-                });
+             //Assert
+             Assert.AreEqual(ActionType.Stop, actualAction, "Wrong action type if all files pass through filter.");
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Stop action type for ItemFinded Event.");
+         }
 
-            //Assert
-            Assert.AreEqual(ActionType.Stop, actualAction, "Wrong action type if all files pass through filter.");
-            Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Stop action type for ItemFiltered Event.");
-        }
+         [Test]
+         public void ItemValidation_ItemFilteredEvent_StopActionReturned()
+         {
+             // Arrange
+             FileSystemInfo fileSystemInfo = fileSystemInfoMock.Object;
+             int expectedIndicatorValue = 2;
+             int actualIndicatorValue = 0;
+
+             // Act
+             var actualAction = validation.Validate(fileSystemInfo, fileInfo => true,
+                 (s, eventArgs) => actualIndicatorValue++,
+                 (s, eventArgs) =>
+                 {
+                     actualIndicatorValue++;
+                     eventArgs.ActionType = ActionType.Stop;
+                 });
+
+             //Assert
+             Assert.AreEqual(ActionType.Stop, actualAction, "Wrong action type if all files pass through filter.");
+             Assert.AreEqual(expectedIndicatorValue, actualIndicatorValue, "Wrong count of indicator with Stop action type for ItemFiltered Event.");
+         }*/
+
+        #endregion 
     }
 }

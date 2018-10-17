@@ -41,10 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActionType.cs" />
-    <Compile Include="EventArgs\FileSystemInfoEventArgs.cs" />
+    <Compile Include="FakeClass.cs" />
+    <Compile Include="FileSystemEventArgs\FileSystemInfoEventArgs.cs" />
     <Compile Include="FileSystemVisitor.cs" />
-    <Compile Include="ItemValidation.cs" />
+    <Compile Include="IFakeClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
